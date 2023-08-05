@@ -23,6 +23,7 @@ invertedBlur = cv2.bitwise_not(blur)
 # 스케치 효과를 주기 위해 흑백 사진과 블러 흑백 이미지를 나눈 뒤, 255를 곱함
 sketch = cv2.divide(gray, invertedBlur, scale=255)
 
+# 스케치 이미지 보여주기
 cv2.imshow("sketch", sketch)
 
 # 입력받는 것 대기하기, 작성안하면, 결과창이 바로 닫힘
