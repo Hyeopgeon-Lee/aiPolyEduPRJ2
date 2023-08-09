@@ -2,7 +2,7 @@
 import cv2
 
 # 분석하기 위한 이미지 불러오기
-image = cv2.imread("../image/emoticon.png", cv2.IMREAD_UNCHANGED)
+image = cv2.imread("../image/my_face.jpg", cv2.IMREAD_COLOR)
 
 # 흑백사진으로 변경
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -44,4 +44,3 @@ cv2.imshow("MyFace", image)
 
 # 입력받는 것 대기하기, 작성안하면, 결과창이 바로 닫힘
 cv2.waitKey(0)
-
