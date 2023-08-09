@@ -45,18 +45,20 @@ if facesCnt > 0:
         emoticon_image_resize = cv2.resize(emoticon_image, (w, h), interpolation=cv2.INTER_AREA)
 
         # 이모티콘 이미지를 흑백으로 변환하기
-        gray_mask = cv2.cvtColor(emoticon_image_resize, cv2.COLOR_BGR2GRAY)
+        emoticon_image_gray = cv2.cvtColor(emoticon_image_resize, cv2.COLOR_BGR2GRAY)
 
-        # 이모티콘 이미지를 마스크(형태만 만들기)로 만들기 위해 검정색과 흰색으로 만들기
-        ret, mask = cv2.threshold(gray_mask, 240, 255, cv2.THRESH_BINARY_INV)
+        # 이모티콘 이미지를 마스크(형태만 만들기)로 만들기 위해 검정색과 흰색 2가지만 존재하게 만들기
+        ret, emoticon_image_mask = cv2.threshold(emoticon_image_gray, 240, 255, cv2.THRESH_BINARY_INV)
 
-        # 흰색을 검정색으로 만들기(배경이 검정색이기 때문에)
-        mask_inv = cv2.bitwise_not(mask)
+        # 배경은 검정색이라, 배경을 흰색으로 변경(흰색 -> 검정색 / 검정색 -> 흰색)
+        emoticon_image_mask_inv = cv2.bitwise_not(emoticon_image_mask)
 
-        masked_face = cv2.bitwise_and(emoticon_image_resize, emoticon_image_resize, mask=mask)
-        masked_frame = cv2.bitwise_and(face_image, face_image, mask=mask_inv)
+        # 색상 존재하는 이미지와 마스크와 합차기
+        emoticon_image_mask_face = cv2.bitwise_and(emoticon_image_resize, emoticon_image_resize,
+                                                   mask=emoticon_image_mask)
+        emoticon_image_mask_frame = cv2.bitwise_and(face_image, face_image, mask=emoticon_image_mask_inv)
 
-        image[y:y + h, x:x + w] = cv2.add(masked_face, masked_frame)
+        image[y:y + h, x:x + w] = cv2.add(emoticon_image_mask_face, emoticon_image_mask_frame)
 
     # 이모티콘 처리된 이미지 파일 생성하기
     cv2.imwrite("../result/emoticon_png.jpg", image)
