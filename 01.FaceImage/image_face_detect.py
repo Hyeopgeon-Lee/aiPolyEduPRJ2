@@ -2,7 +2,7 @@
 import cv2
 
 # 분석하기 위한 이미지 불러오기
-image = cv2.imread("../image/izone.jpg", cv2.IMREAD_COLOR)
+image = cv2.imread("../image/emoticon.png", cv2.IMREAD_UNCHANGED)
 
 # 흑백사진으로 변경
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
