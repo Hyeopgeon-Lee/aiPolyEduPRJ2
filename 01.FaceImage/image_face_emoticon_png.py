@@ -44,9 +44,15 @@ if facesCnt > 0:
         # 얼굴 영역 이미지를 이모티콘 이미지로 변경
         emoticon_image_resize = cv2.resize(emoticon_image, (w, h), interpolation=cv2.INTER_AREA)
 
+        # 이모티콘 이미지를 흑백으로 변환하기
         gray_mask = cv2.cvtColor(emoticon_image_resize, cv2.COLOR_BGR2GRAY)
+
+        # 이모티콘 이미지를 마스크(형태만 만들기)로 만들기 위해 검정색과 흰색으로 만들기
         ret, mask = cv2.threshold(gray_mask, 240, 255, cv2.THRESH_BINARY_INV)
+
+        # 흰색을 검정색으로 만들기(배경이 검정색이기 때문에)
         mask_inv = cv2.bitwise_not(mask)
+
         masked_face = cv2.bitwise_and(emoticon_image_resize, emoticon_image_resize, mask=mask)
         masked_frame = cv2.bitwise_and(face_image, face_image, mask=mask_inv)
 
