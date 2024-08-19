@@ -23,7 +23,6 @@ while True:
         # 가우시안 필터링 적용
         # 가우시안 커널(KSize): 가우시안 커널 크기
         # sigmaX: x방향 sigma로 가우시안 커널 크기(KSize)는 sigmaX 값에 따라 자동 계산
-        # 설정값 : 1부터 4까지 사용 / 0은 sigmaX 사용하지 않는 것으로 가우시안 커널(KSize) 값을 설정함
         # 사용 이유 : 밝은 곳은 더 밝게,  어두운 곳은 더 어둡게 변환
         blur = cv2.GaussianBlur(invert, (0, 0), 10)
 

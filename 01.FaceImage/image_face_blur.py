@@ -4,13 +4,13 @@ import cv2
 # 분석하기 위한 이미지 불러오기
 image = cv2.imread("../image/my_face.jpg", cv2.IMREAD_COLOR)
 
+if image is None: raise Exception("이미지 읽기 실패")
+
 # 흑백사진으로 변경
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 # 변환한 흑백사진으로부터 히스토그램 평활화
 gray = cv2.equalizeHist(gray)
-
-if image is None: raise Exception("이미지 읽기 실패")
 
 # 학습된 얼굴 정면검출기 사용하기(OpenCV에 존재하는 파일)
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml")
@@ -40,17 +40,19 @@ if facesCnt > 0:
         # 원본이미지로부터 얼굴영역 가져오기
         face_image = image[y:y + h, x:x + w]
 
-        # 얼굴 영역의 픽셀을 가로, 세로 50px의 평균 값으로 블러 처리, 만약 얼굴영역의 픽셀크기가 50보다 작은 작게 설정
+        # 얼굴 영역에 블러 처리 / Kernel Size가 클수록 블러가 강해짐
         blur_face_image = cv2.blur(face_image, (50, 50))
 
-        # 원본이미지에 모자이크 처리한 얼굴 이미지 붙이기
+        cv2.imshow("blur_face_image", blur_face_image)
+
+        # 원본이미지에 블러 처리한 얼굴 이미지 붙이기
         image[y:y + h, x:x + w] = blur_face_image
 
-    # 모자이크 처리된 이미지 파일 생성하기
-    cv2.imwrite("../result/mosaic.jpg", image)
+    # 블러 처리된 이미지 파일 생성하기
+    cv2.imwrite("../result/face_blur.jpg", image)
 
-    # 모자이크 처리된 이미지 보여주기
-    cv2.imshow("mosaic_image", cv2.imread("../result/mosaic.jpg", cv2.IMREAD_COLOR))
+    # 블러 처리된 이미지 보여주기
+    cv2.imshow("face-blur", cv2.imread("../result/face_blur.jpg", cv2.IMREAD_COLOR))
 
 else:
     print("얼굴 미검출")

@@ -1,112 +1,70 @@
-import cv2
+import cv2  # OpenCV 라이브러리 불러오기
 
-# 얼굴 탐지를 위한 모델
+# 얼굴 탐지를 위한 Haar Cascade 모델 로드
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml")
 
-# 나이예측을 위한 학습된 모델데이터와 모델데이터 구조 설명데이터
-# deploy_age.prototxt : 모델구조 설명 데이터
-# age_net.caffemodel : 학습된 모델데이터
-age_net = cv2.dnn.readNetFromCaffe(
-    "../model/deploy_age.prototxt", "../model/age_net.caffemodel")
+# 나이 예측을 위한 Caffe 모델 로드
+age_net = cv2.dnn.readNetFromCaffe("../model/deploy_age.prototxt", "../model/age_net.caffemodel")
 
-# 성별예측을 위한 학습된 모델데이터와 모델데이터 구조 설명데이터
-# deploy_gender.prototxt : 모델구조 설명 데이터
-# gender_net.caffemodel : 학습된 모델데이터
-gender_net = cv2.dnn.readNetFromCaffe(
-    "../model/deploy_gender.prototxt", "../model/gender_net.caffemodel")
+# 성별 예측을 위한 Caffe 모델 로드
+gender_net = cv2.dnn.readNetFromCaffe("../model/deploy_gender.prototxt", "../model/gender_net.caffemodel")
 
-# 학습된 모델데이터에 정의된 입력영상 각 채널에서 뺄 평균값
-# 사용할 학습데이터는 반드시 아래와 같은 값을 사용해야 함
+# Caffe 모델의 학습 데이터에 사용된 평균값 (RGB 순서)
 MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
 
-# 나이 예측결과에 대한 결과값 리스트
-age_list = ["(0 ~ 2)", "(4 ~ 6)", "(8 ~ 12)", "(15 ~ 20)",
-            "(25 ~ 32)", "(38 ~ 43)", "(48 ~ 53)", "(60 ~ 100)"]
+# 나이 예측 결과로 사용할 연령대 리스트 (모델 출력 값에 해당)
+age_list = ["(0-2)", "(4-6)", "(8-12)", "(15-20)", "(25-32)", "(38-43)", "(48-53)", "(60-100)"]
 
-# 성별 예측결과에 대한 결과값 리스트
+# 성별 예측 결과로 사용할 리스트 (모델 출력 값에 해당)
 gender_list = ["Male", "Female"]
 
-# 웹캠으로부터 영상 가져오기(0 : 컴퓨터에 기본 설치된 웹캠 장치 / cv2.CAP_DSHOW : 화면에 웹캠영상 바로 보여주기)
-cam = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+# 웹캠 영상 캡처 시작 (기본 웹캠 장치 사용)
+cam = cv2.VideoCapture(0)
 
-# 동영상은 시작부터 종료될때까지 프레임을 지속적으로 받아야 하기 때문에 while문을 계속 반복함
+# 실시간 비디오 프레임 처리를 위한 무한 루프
 while True:
-
-    # 웹캠의 영상은 이미지파일과 유사한 많은 프레임들이 빠르게 움직이면서 보여줌
-    # 웹캠의 영상으로부터 프레임 1개마다 읽어오기 위해 사용
-    ret, webcam_image = cam.read()  # 프레임 1개마다 읽기
-
-    # 웹캠 영상으로부터 프레임(이미지)를 잘 받았으면 실행함
-    if ret is True:
-
-        # 흑백사진으로 변경
-        gray = cv2.cvtColor(webcam_image, cv2.COLOR_BGR2GRAY)
-
-        # 변환한 흑백사진으로부터 히스토그램 평활화
-        gray = cv2.equalizeHist(gray)
-
-        # 얼굴 검출 수행(정확도 높이는 방법의 아래 파라미터를 조절함)
-        # 얼굴 검출은 히스토그램 평황화한 이미지 사용
-        # scaleFactor : 1.1
-        # minNeighbors : 인근 유사 픽셀 발견 비율이 5번 이상
-        # flags : 0 => 더이상 사용하지 않는 인자값
-        # 분석할 이미지의 최소 크기 : 가로 100, 세로 100
-        faces = face_cascade.detectMultiScale(gray, 1.1, 5, 0, (100, 100))
-
-        # 탐지된 얼굴 수만큼 반복 실행하기
-        for face in faces:
-            # 얼굴영역 좌표
-            x, y, w, h = face
-
-            # 얼굴영역 이미지
-            face_image = webcam_image[y:y + h, x:x + w]
-
-            # 네트워크 입력 BLOB 만들기 : 분석을 위한 데이터구조 만들기
-            # image: 입력 데이터로 사용할 이미지
-            # scalefactor: 입력 이미지의 픽셀 값에 곱할 값 / 기본값은 1
-            # size: 출력 영상의 크기 / 기본값은(0, 0) / 반드시 출력 크기를 정의 / 학습된 모델데이터가 제시하는 값을 사용함
-            # mean: 입력 영상 각 채널에서 뺄 평균 값 / 기본값은(0, 0, 0, 0) / 학습된 모델데이터가 제시하는 값을 사용함
-            # swapRB: R과 B채널을 서로 바꿀 것인지를 결정하는 플래그.기본값은 False
-            blob = cv2.dnn.blobFromImage(face_image, 1, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
-
-            # 성별 예측하기
-            # 분석 데이터를 입력하기
-            gender_net.setInput(blob)
-
-            # 성별 예측하기
-            gender_preds = gender_net.forward()
-
-            # 성별 예측 결과 가져오기(여러개 중에 1개 선택할 사용하는 알고리즘, TenserFlow의 Softmax와 유사)
-            gender = gender_preds.argmax()
-
-            # 나이 예측하기
-            # 분석 데이터를 입력하기
-            age_net.setInput(blob)
-
-            # 나이 예측하기
-            age_preds = age_net.forward()
-
-            # 나이 예측 결과 가져오기(여러개 중에 1개 선택할 사용하는 알고리즘, TenserFlow의 Softmax와 유사)
-            age = age_preds.argmax()
-
-            # 웹캠 원본 프레임의 얼굴 영역에 사각형 그리기
-            cv2.rectangle(webcam_image, face, (255, 0, 0), 4)
-
-            # 예측결과 문자열
-            result = gender_list[gender] + " " + age_list[age]
-
-            # 웹캠 원본 프레임의 얼굴 영역 위에 예측결과 문자열을 사진에 추가하기
-            cv2.putText(webcam_image, result, (x, y - 15), 0, 1, (255, 0, 0), 2)
-
-        # 수정된 웹캠 프레임 출력
-        cv2.imshow("webcam_myFace", webcam_image)
-
-    # 입력받는 것 대기하기, 작성안하면, 결과창이 바로 닫힘
-    if cv2.waitKey(1) > 0:
+    # 웹캠에서 프레임 읽기 (ret: 성공 여부, frame: 읽어온 프레임)
+    ret, frame = cam.read()
+    if not ret:  # 프레임 읽기 실패 시 루프 종료
         break
 
-# 사용이 완료된 웹캠을 해지하기
-cam.release()
+    # 프레임을 흑백으로 변환하고 히스토그램 평활화 (얼굴 탐지 성능 향상)
+    gray = cv2.equalizeHist(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
 
-# 모든 창 닫기
+    # 얼굴을 탐지하여 얼굴 영역 좌표 리스트 반환
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(100, 100))
+
+    # 탐지된 모든 얼굴에 대해 반복
+    for (x, y, w, h) in faces:
+        # 탐지된 얼굴 영역을 자름
+        face_img = frame[y:y+h, x:x+w]
+
+        # 얼굴 이미지를 (227, 227) 크기로 변환하고, 평균값으로 정규화
+        blob = cv2.dnn.blobFromImage(face_img, scalefactor=1.0, size=(227, 227), mean=MODEL_MEAN_VALUES, swapRB=False)
+
+        # 성별 예측을 위해 blob 입력 설정
+        gender_net.setInput(blob)
+        # 성별 예측 결과 얻기 (확률이 가장 높은 인덱스를 선택)
+        gender = gender_list[gender_net.forward().argmax()]
+
+        # 나이 예측을 위해 blob 입력 설정
+        age_net.setInput(blob)
+        # 나이 예측 결과 얻기 (확률이 가장 높은 인덱스를 선택)
+        age = age_list[age_net.forward().argmax()]
+
+        # 얼굴 영역에 사각형 그리기
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        # 얼굴 위에 성별과 나이 예측 결과 텍스트 표시
+        cv2.putText(frame, f"{gender}, {age}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2, cv2.LINE_AA)
+
+    # 실시간 결과 화면 출력
+    cv2.imshow("Webcam - Gender and Age Detection", frame)
+
+    # ESC 키를 누르면 루프 종료
+    if cv2.waitKey(1) & 0xFF == 27:
+        break
+
+# 웹캠 해제
+cam.release()
+# 모든 OpenCV 창 닫기
 cv2.destroyAllWindows()
